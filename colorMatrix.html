@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>随机颜色矩阵生成器</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f7fa;
+            color: #333;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 30px;
+        }
+
+        .container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+
+        input {
+            padding: 10px 15px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            width: 100px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            border-color: #3498db;
+            outline: none;
+        }
+
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background-color 0.3s;
+            align-self: flex-end;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .matrix-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .matrix {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 4px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .cell {
+            width: 40px;
+            height: 40px;
+            border-radius: 5px;
+            transition: transform 0.2s;
+        }
+
+        .cell:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 8px rgba(0, 0, 0, 0.3);
+            z-index: 1;
+            position: relative;
+        }
+
+        .color-label {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .color-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .color-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+
+        .instructions {
+            background-color: #f8f9fa;
+            border-left: 4px solid #3498db;
+            padding: 15px 20px;
+            margin: 25px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .instructions h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+
+        .instructions ul {
+            margin-bottom: 0;
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>随机颜色矩阵生成器</h1>
+   <h3>本程序生成一个10*10得随机颜色矩阵，颜色选择基于概率规则</h3>
+    <div class="container">
+
+
+        <div class="matrix-container">
+            <div class="matrix" id="color-matrix"></div>
+        </div>
+
+        <div class="color-label">
+            <div class="color-item">
+                <div class="color-box" style="background-color: #FF0000;"></div>
+                <span>红色</span>
+            </div>
+            <div class="color-item">
+                <div class="color-box" style="background-color: #00FF00;"></div>
+                <span>绿色</span>
+            </div>
+            <div class="color-item">
+                <div class="color-box" style="background-color: #0000FF;"></div>
+                <span>蓝色</span>
+            </div>
+            <div class="color-item">
+                <div class="color-box" style="background-color: #FFFF00;"></div>
+                <span>黄色</span>
+            </div>
+            <div class="color-item">
+                <div class="color-box" style="background-color: #FFA500;"></div>
+                <span>橙色</span>
+            </div>
+        </div>
+        <div class="controls">
+            <div class="input-group">
+                <label for="x-input">X 值 (%)</label>
+                <input type="number" id="x-input" min="0" max="100" value="10">
+            </div>
+            <div class="input-group">
+                <label for="y-input">Y 值 (%)</label>
+                <input type="number" id="y-input" min="0" max="100" value="10">
+            </div>
+            <div class="input-group">
+                <label for="z-input">Z 值 (%)</label>
+                <input type="number" id="z-input" min="0" max="100" value="30">
+            </div>
+            <button id="generate-btn">生成矩阵</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const colorMap = {
+                'red': '#FF0000',
+                'green': '#00FF00',
+                'blue': '#0000FF',
+                'yellow': '#FFFF00',
+                'orange': '#FFA500'
+            };
+
+            const colors = Object.keys(colorMap);
+            const matrixSize = 10;
+            let colorMatrix = [];
+
+            const xInput = document.getElementById('x-input');
+            const yInput = document.getElementById('y-input');
+            const zInput = document.getElementById('z-input');
+            const generateBtn = document.getElementById('generate-btn');
+            const matrixContainer = document.getElementById('color-matrix');
+
+            // 初始化矩阵
+            function initializeMatrix() {
+                matrixContainer.innerHTML = '';
+                colorMatrix = [];
+
+                for (let i = 0; i < matrixSize; i++) {
+                    colorMatrix[i] = [];
+                    for (let j = 0; j < matrixSize; j++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'cell';
+                        cell.id = `cell-${i}-${j}`;
+                        matrixContainer.appendChild(cell);
+                        colorMatrix[i][j] = null;
+                    }
+                }
+            }
+
+            // 生成颜色矩阵
+            function generateColorMatrix() {
+                const x = parseInt(xInput.value) / 100;
+                const y = parseInt(yInput.value) / 100;
+                const z = parseInt(zInput.value) / 100;
+                const baseProbability = 0.2; // 5种颜色的基准概率
+
+                // 设置(0,0)点的颜色
+                const initialColor = colors[Math.floor(Math.random() * colors.length)];
+                colorMatrix[0][0] = initialColor;
+                document.getElementById(`cell-0-0`).style.backgroundColor = colorMap[initialColor];
+
+                // 生成其他点的颜色
+                for (let i = 0; i < matrixSize; i++) {
+                    for (let j = 0; j < matrixSize; j++) {
+                        if (i === 0 && j === 0) continue;
+
+                        let probabilities = {
+                            'red': baseProbability,
+                            'green': baseProbability,
+                            'blue': baseProbability,
+                            'yellow': baseProbability,
+                            'orange': baseProbability
+                        };
+
+                        // 应用概率规则
+                        if (j > 0) { // 存在左侧单元格
+                            const leftColor = colorMatrix[i][j - 1];
+                            probabilities[leftColor] += x;
+                        }
+
+                        if (i > 0) { // 存在上方单元格
+                            const topColor = colorMatrix[i - 1][j];
+                            probabilities[topColor] += y;
+                        }
+
+                        if (i > 0 && j > 0) {
+                            const leftColor = colorMatrix[i][j - 1];
+                            const topColor = colorMatrix[i - 1][j];
+
+                            if (leftColor === topColor) {
+                                probabilities[leftColor] += z;
+                            }
+                        }
+
+                        // 归一化概率
+                        const total = Object.values(probabilities).reduce((sum, prob) => sum + prob, 0);
+                        for (let color in probabilities) {
+                            probabilities[color] /= total;
+                        }
+
+                        // 根据概率选择颜色
+                        const rand = Math.random();
+                        let cumulative = 0;
+                        let selectedColor = colors[0];
+
+                        for (let color of colors) {
+                            cumulative += probabilities[color];
+                            if (rand <= cumulative) {
+                                selectedColor = color;
+                                break;
+                            }
+                        }
+
+                        colorMatrix[i][j] = selectedColor;
+                        document.getElementById(`cell-${i}-${j}`).style.backgroundColor = colorMap[selectedColor];
+                    }
+                }
+            }
+
+            // 绑定按钮点击事件
+            generateBtn.addEventListener('click', function () {
+                initializeMatrix();
+                generateColorMatrix();
+            });
+
+            // 初始化页面
+            initializeMatrix();
+            generateColorMatrix();
+        });
+    </script>
+</body>
+
+</html>
