@@ -155,7 +155,7 @@
 
 <body>
     <h1>随机颜色矩阵生成器</h1>
-   <h3>本程序生成一个10*10得随机颜色矩阵，颜色选择基于概率规则</h3>
+    <h3>本程序生成一个10*10得随机颜色矩阵，颜色选择基于概率规则</h3>
     <div class="container">
 
 
@@ -203,17 +203,27 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const colorMap = {
-                'red': '#FF0000',
-                'green': '#00FF00',
-                'blue': '#0000FF',
-                'yellow': '#FFFF00',
-                'orange': '#FFA500'
-            };
+                // 预定义颜色
+        const COLORS = [
+            '#FF0000', // 红色
+            '#00FF00', // 绿色
+            '#0000FF', // 蓝色
+            '#FFFF00', // 黄色
+            '#FFA500'  // 橙色
+        ];
 
-            const colors = Object.keys(colorMap);
-            const matrixSize = 10;
+        // 颜色名称映射
+        const COLOR_NAMES = {
+            '#FF0000': '红色',
+            '#00FF00': '绿色',
+            '#0000FF': '蓝色',
+            '#FFFF00': '黄色',
+            '#FFA500': '橙色'
+        };
+        document.addEventListener('DOMContentLoaded', function () {
+     
+            // const colors = Object.keys(colorMap);
+            const matrixSize = 10; // 10*10 矩阵
             let colorMatrix = [];
 
             const xInput = document.getElementById('x-input');
@@ -247,68 +257,68 @@
                 const baseProbability = 0.2; // 5种颜色的基准概率
 
                 // 设置(0,0)点的颜色
-                const initialColor = colors[Math.floor(Math.random() * colors.length)];
-                colorMatrix[0][0] = initialColor;
-                document.getElementById(`cell-0-0`).style.backgroundColor = colorMap[initialColor];
+                const initialColorIndex = Math.floor(Math.random() * 5);;
+                colorMatrix[0][0] = COLORS[initialColorIndex];
+                document.getElementById(`cell-0-0`).style.backgroundColor = COLORS[initialColorIndex];
 
                 // 生成其他点的颜色
                 for (let i = 0; i < matrixSize; i++) {
                     for (let j = 0; j < matrixSize; j++) {
                         if (i === 0 && j === 0) continue;
-
-                        let probabilities = {
-                            'red': baseProbability,
-                            'green': baseProbability,
-                            'blue': baseProbability,
-                            'yellow': baseProbability,
-                            'orange': baseProbability
-                        };
-
-                        // 应用概率规则
-                        if (j > 0) { // 存在左侧单元格
-                            const leftColor = colorMatrix[i][j - 1];
-                            probabilities[leftColor] += x;
-                        }
-
-                        if (i > 0) { // 存在上方单元格
-                            const topColor = colorMatrix[i - 1][j];
-                            probabilities[topColor] += y;
-                        }
-
-                        if (i > 0 && j > 0) {
-                            const leftColor = colorMatrix[i][j - 1];
-                            const topColor = colorMatrix[i - 1][j];
-
-                            if (leftColor === topColor) {
-                                probabilities[leftColor] += z;
-                            }
-                        }
-
-                        // 归一化概率
-                        const total = Object.values(probabilities).reduce((sum, prob) => sum + prob, 0);
-                        for (let color in probabilities) {
-                            probabilities[color] /= total;
-                        }
-
-                        // 根据概率选择颜色
+                        // 确定当前单元格的颜色
+                        let colorIndex;
+                         // 计算概率分布
+                        const probabilities = calculateProbabilities(i, j, x, y, z, baseProbability);
+                        // 根据概率分布随机选择颜色
                         const rand = Math.random();
                         let cumulative = 0;
-                        let selectedColor = colors[0];
-
-                        for (let color of colors) {
-                            cumulative += probabilities[color];
-                            if (rand <= cumulative) {
-                                selectedColor = color;
+                        for (let i = 0; i < 5; i++) {
+                            cumulative += probabilities[i];
+                            if (rand < cumulative) {
+                                colorIndex = i;
                                 break;
                             }
                         }
+                         const color = COLORS[colorIndex];
 
-                        colorMatrix[i][j] = selectedColor;
-                        document.getElementById(`cell-${i}-${j}`).style.backgroundColor = colorMap[selectedColor];
+                        colorMatrix[i][j] = color;
+                        document.getElementById(`cell-${i}-${j}`).style.backgroundColor = color;
                     }
                 }
             }
+            // 计算颜色概率分布
+            function calculateProbabilities(m, n, x, y, z, baseProbability) {
+                const probabilities = Array(5).fill(0);
+                let leftColor = null;
+                let topColor = null;
 
+                // 获取左边和上边的颜色
+                if (n > 0) leftColor = colorMatrix[m][n - 1];
+                if (m > 0) topColor = colorMatrix[m - 1][n];
+
+                // 计算额外概率
+                let extraProb = 0;
+                if (leftColor !== null) extraProb += x;
+                if (topColor !== null) extraProb += y;
+
+                // 如果左边和上边颜色相同
+                if (leftColor !== null && topColor !== null && leftColor === topColor) {
+                    extraProb = z; // 使用Z值替代X+Y
+                }
+
+                // 计算每种颜色的概率 这里调整一下 如果xyz有个100 其他颜色不会出现
+                const otherColorsProb = (1 - (baseProbability + extraProb)) / 4;
+
+                for (let i = 0; i < 5; i++) {
+                    if (leftColor === COLORS[i] || topColor === COLORS[i]) {
+                        probabilities[i] = baseProbability + extraProb;
+                    } else {
+                        probabilities[i] = otherColorsProb;
+                    }
+                }
+
+                return probabilities;
+            }
             // 绑定按钮点击事件
             generateBtn.addEventListener('click', function () {
                 initializeMatrix();
